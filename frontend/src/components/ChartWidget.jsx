@@ -1,16 +1,21 @@
 import React, { useEffect, useRef, memo } from 'react';
+import { ExternalLink } from 'lucide-react';
 
 function ChartWidget({ symbol }) {
     const containerRef = useRef(null);
+
+    const cleanSymbol = symbol ? symbol.replace('.NS', '') : '';
+    const liveUrl = `https://www.tradingview.com/chart/?symbol=NSE:${cleanSymbol}`;
 
     useEffect(() => {
         // Only fetch for actual symbol
         if (!symbol) return;
 
         // TradingView requires symbol in EXACT format like: "BSE:RELIANCE" or "NSE:RELIANCE"
-        // Our DB stores "RELIANCE.NS" or "RELIANCE.BO"
+        // Note: NSE symbols are restricted in free external widgets.
+        // We use BSE here to at least show a working chart (EOD/Delayed).
         const tvSymbol = symbol.endsWith('.NS')
-            ? `BSE:${symbol.replace('.NS', '')}` // TV uses BSE or NSE, let's use BSE for Indian stocks or NSE if available
+            ? `BSE:${cleanSymbol}`
             : symbol;
 
         const script = document.createElement("script");
@@ -43,16 +48,33 @@ function ChartWidget({ symbol }) {
             containerRef.current.appendChild(script);
         }
 
-    }, [symbol]);
+    }, [symbol, cleanSymbol]);
+
+    if (!symbol) return null;
 
     return (
-        <div className="w-full h-[500px] rounded-xl overflow-hidden shadow-2xl bg-darkCard border border-slate-700 p-1">
-            <div
-                id="tradingview_cfb97"
-                className="tradingview-widget-container h-full w-full"
-                ref={containerRef}
-            >
-                <div className="tradingview-widget-container__widget h-full w-full"></div>
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 italic">Note: Embedded charts may have 1-day delay</span>
+                <a
+                    href={liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20"
+                >
+                    <ExternalLink className="w-3 h-3" />
+                    View Live NSE Chart
+                </a>
+            </div>
+            
+            <div className="w-full h-[500px] rounded-xl overflow-hidden shadow-2xl bg-darkCard border border-slate-700 p-1">
+                <div
+                    id="tradingview_cfb97"
+                    className="tradingview-widget-container h-full w-full"
+                    ref={containerRef}
+                >
+                    <div className="tradingview-widget-container__widget h-full w-full"></div>
+                </div>
             </div>
         </div>
     );

@@ -4,6 +4,8 @@ const scanResultSchema = mongoose.Schema({
     stock: { type: mongoose.Schema.Types.ObjectId, ref: 'Stock', required: true },
     symbol: { type: String, required: true },
     price: { type: Number },
+    change: { type: Number },
+    changePercent: { type: Number },
     ema9: { type: Number },
     ema15: { type: Number },
     rsi: { type: Number },

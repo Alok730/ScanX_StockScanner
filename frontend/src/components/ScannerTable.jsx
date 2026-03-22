@@ -1,7 +1,33 @@
-import React from 'react';
-import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ArrowUpRight, ArrowDownRight, Minus, ArrowUpDown } from 'lucide-react';
 
 export default function ScannerTable({ stocks, onSelectStock, selectedSymbol }) {
+    const [sortConfig, setSortConfig] = useState({ key: 'changePercent', direction: 'desc' });
+
+    const sortedStocks = useMemo(() => {
+        let sortableItems = [...stocks];
+        if (sortConfig.key !== null) {
+            sortableItems.sort((a, b) => {
+                if (a[sortConfig.key] < b[sortConfig.key]) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (a[sortConfig.key] > b[sortConfig.key]) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [stocks, sortConfig]);
+
+    const requestSort = (key) => {
+        let direction = 'desc';
+        if (sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
+
     if (stocks.length === 0) {
         return (
             <div className="bg-darkCard rounded-xl border border-slate-700 p-8 text-center text-slate-400">
@@ -17,7 +43,16 @@ export default function ScannerTable({ stocks, onSelectStock, selectedSymbol }) 
                     <thead className="text-xs uppercase bg-slate-800/50 text-slate-400 sticky top-0 z-10 backdrop-blur-md">
                         <tr>
                             <th className="px-6 py-4 font-medium">Symbol</th>
-                            <th className="px-6 py-4 font-medium text-right">Price (₹)</th>
+                            <th className="px-6 py-4 font-medium text-right cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('lastPrice')}>
+                                <div className="flex items-center justify-end gap-1">
+                                    Price (₹) <ArrowUpDown className="w-3 h-3" />
+                                </div>
+                            </th>
+                            <th className="px-6 py-4 font-medium text-right cursor-pointer hover:text-white transition-colors" onClick={() => requestSort('change')}>
+                                <div className="flex items-center justify-end gap-1">
+                                    Change <ArrowUpDown className="w-3 h-3" />
+                                </div>
+                            </th>
                             <th className="px-6 py-4 font-medium text-right">EMA 9</th>
                             <th className="px-6 py-4 font-medium text-right">EMA 15</th>
                             <th className="px-6 py-4 font-medium text-right">RSI (14)</th>
@@ -27,12 +62,14 @@ export default function ScannerTable({ stocks, onSelectStock, selectedSymbol }) 
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700/50">
-                        {stocks.map((stock) => {
+                        {sortedStocks.map((stock) => {
                             const isBullish = stock.signal === 'Bullish' || stock.signal === 'Buy';
                             const isBearish = stock.signal === 'Bearish' || stock.signal === 'Sell';
                             const isStrong = stock.signal === 'Buy' || stock.signal === 'Sell';
                             const isSelected = selectedSymbol === stock.symbol;
 
+                            const priceColor = stock.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+                            
                             // Color-code RSI: Overbought > 70 (red), Oversold < 30 (green)
                             let rsiColor = 'text-slate-400';
                             if (stock.rsi >= 70) rsiColor = 'text-rose-400 font-bold';
@@ -52,8 +89,14 @@ export default function ScannerTable({ stocks, onSelectStock, selectedSymbol }) 
                                             <span className="text-xs text-slate-500">{stock.exchange}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 font-mono text-right text-slate-200">
+                                    <td className={`px-6 py-4 font-mono text-right font-bold ${priceColor}`}>
                                         {stock.lastPrice?.toFixed(2) || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 font-mono text-right">
+                                        <div className={`flex flex-col ${priceColor}`}>
+                                            <span className="font-bold">{stock.change >= 0 ? '+' : ''}{stock.change?.toFixed(2)}</span>
+                                            <span className="text-[10px] opacity-80">{stock.changePercent?.toFixed(2)}%</span>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 font-mono text-right text-slate-400">
                                         {stock.ema9?.toFixed(2) || '-'}

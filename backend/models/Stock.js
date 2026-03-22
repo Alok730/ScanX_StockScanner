@@ -5,6 +5,8 @@ const stockSchema = mongoose.Schema({
     name: { type: String },
     exchange: { type: String, enum: ['NSE', 'BSE'], default: 'NSE' },
     lastPrice: { type: Number },
+    change: { type: Number },
+    changePercent: { type: Number },
     ema9: { type: Number },
     ema15: { type: Number },
     rsi: { type: Number },
